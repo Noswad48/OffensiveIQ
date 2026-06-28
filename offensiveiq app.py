@@ -336,8 +336,93 @@ def build_excel(plays, opp, week, date):
         hash_row(ws6,ri+4,f"{zcode} — {zone_names[zcode]}",[p for p in plays if p['zone']==zcode],ZONE_HDR[zcode],ZONE_BG[zcode])
     ws6.freeze_panes="A3"
 
-    # ── Tab 7: Situational Summary ───────────────────────────
-    ws7=wb2.create_sheet("7. Situational Summary")
+
+    # ── Tab 7: Down & Distance Tendencies ────────────────────
+    ws_dd=wb2.create_sheet("7. Down & Distance")
+    ws_dd.sheet_properties.tabColor="F1C40F"
+    ws_dd.sheet_view.showGridLines=False
+    NC_DD=13
+    widths(ws_dd,[20,8,8,8,20,20,20,20,20,20,16,16,16])
+    banner(ws_dd,1,"DOWN & DISTANCE  —  Top Fronts, Coverages & Blitzes by Situation",NC_DD,bg=CB,sz=12,ht=32)
+
+    ws_dd.row_dimensions[2].height=38
+    for cn,txt,bg in[
+        (1,"SITUATION",CB),(2,"Plays",CB),(3,"Run%",CB),(4,"Pass%",CB),
+        (5,"#1 Front",CR),(6,"#2 Front",CR),(7,"#3 Front",CR),
+        (8,"#1 Coverage",CBl),(9,"#2 Coverage",CBl),(10,"#3 Coverage",CBl),
+        (11,"Blitz%",CPu),(12,"#1 Blitz Type",CPu),(13,"#2 Blitz Type",CPu),
+    ]:
+        hdr(ws_dd,2,cn,txt,bg=bg,sz=9,wrap=True)
+
+    dd_sits=[
+        ("1ST & 10",       lambda p: p['dn']==1 and p['dist']>=8),
+        ("1ST & SHORT",    lambda p: p['dn']==1 and p['dist']<8),
+        ("2ND & LONG",     lambda p: p['dn']==2 and p['dist']>=7),
+        ("2ND & MEDIUM",   lambda p: p['dn']==2 and 4<=p['dist']<=6),
+        ("2ND & SHORT",    lambda p: p['dn']==2 and p['dist']<=3),
+        ("3RD & LONG",     lambda p: p['dn']==3 and p['dist']>=7),
+        ("3RD & MEDIUM",   lambda p: p['dn']==3 and 4<=p['dist']<=6),
+        ("3RD & SHORT",    lambda p: p['dn']==3 and p['dist']<=3),
+        ("4TH DOWN",       lambda p: p['dn']==4),
+        ("RED ZONE",       lambda p: p['zone']=='RZ'),
+        ("GOAL LINE",      lambda p: p['zone']=='GL'),
+        ("BACKED UP",      lambda p: p['zone']=='BZ'),
+    ]
+    dd_colors=[CTe,CTe,CBl,CBl,CBl,CR,CR,CR,"FF7B241C",CR,CPu,CTe]
+
+    def top3_dd(play_list, key):
+        vals=[str(p.get(key,'')) for p in play_list
+              if p.get(key) not in(None,'','nan','None')
+              and str(p.get(key,'')).strip() not in('','nan','None')]
+        if not vals: return ["—","—","—"]
+        counts=Counter(vals).most_common(3)
+        result=[f"{v} ({n})" for v,n in counts]
+        while len(result)<3: result.append("—")
+        return result
+
+    for ri,(lbl,fn) in enumerate(dd_sits):
+        r=ri+3; ws_dd.row_dimensions[r].height=30
+        color=dd_colors[ri]
+        bg=CRB if ri%2==0 else CL
+        try: sp=[p for p in plays if fn(p)]
+        except: sp=[]
+        n_run=len([p for p in sp if p['rp']=='Run'])
+        n_pass=len([p for p in sp if p['rp']=='Pass'])
+        total=len(sp)
+        blitz_plays=[p for p in sp if p.get('blitz','') not in('','nan','None','0','No')]
+
+        sc(ws_dd,r,1,lbl,bold=True,sz=10,fc=CW,bg=color,h="left")
+        sc(ws_dd,r,2,total,bold=True,sz=11,fc="FF000000",bg=bg,fmt="0")
+        sc(ws_dd,r,3,round(n_run/total,2) if total>0 else "",bold=True,sz=12,fc="FF8B0000",bg=CRB,fmt="0%")
+        sc(ws_dd,r,4,round(n_pass/total,2) if total>0 else "",bold=True,sz=12,fc="FF00008B",bg=CPB,fmt="0%")
+
+        # Top fronts
+        t3f=top3_dd(sp,'front')
+        for i,cn in enumerate([5,6,7]):
+            c=ws_dd.cell(row=r,column=cn,value=t3f[i])
+            c.font=Font(name=FN,sz=9,color="FF8B0000" if t3f[i]!="—" else CDG)
+            c.fill=fil(CRB); c.alignment=Alignment(horizontal="left",vertical="center",wrap_text=True); c.border=bdr()
+
+        # Top coverages
+        t3c=top3_dd(sp,'cov')
+        for i,cn in enumerate([8,9,10]):
+            c=ws_dd.cell(row=r,column=cn,value=t3c[i])
+            c.font=Font(name=FN,sz=9,color="FF00008B" if t3c[i]!="—" else CDG)
+            c.fill=fil(CPB); c.alignment=Alignment(horizontal="left",vertical="center",wrap_text=True); c.border=bdr()
+
+        # Blitz % + top blitz types
+        blitz_pct=round(len(blitz_plays)/total,2) if total>0 else ""
+        sc(ws_dd,r,11,blitz_pct,bold=True,sz=12,fc="FF4A235A",bg="FFEDE7F6",fmt="0%")
+        t3b=top3_dd(blitz_plays,'blitz')
+        for i,cn in enumerate([12,13]):
+            c=ws_dd.cell(row=r,column=cn,value=t3b[i])
+            c.font=Font(name=FN,sz=9,color="FF4A235A" if t3b[i]!="—" else CDG)
+            c.fill=fil("FFEDE7F6"); c.alignment=Alignment(horizontal="left",vertical="center",wrap_text=True); c.border=bdr()
+
+    ws_dd.freeze_panes="B3"
+
+    # ── Tab 8: Situational Summary ───────────────────────────
+    ws7=wb2.create_sheet("8. Situational Summary")
     ws7.sheet_properties.tabColor="4A235A"; ws7.sheet_view.showGridLines=False
     NC7=11; widths(ws7,[16,9,9,18,18,18,18,18,18,18,28])
     banner(ws7,1,"SITUATIONAL SUMMARY  —  What do we face in every situation",NC7,bg="FF4A235A",sz=12,ht=30)
@@ -421,7 +506,7 @@ def build_excel(plays, opp, week, date):
     ws8.freeze_panes="D3"
 
     # ── Tab 9: Coordinator Summary ───────────────────────────
-    ws9=wb2.create_sheet("9. Coordinator Summary")
+    ws9=wb2.create_sheet("10. Coordinator Summary")
     ws9.sheet_properties.tabColor="F1C40F"; ws9.sheet_view.showGridLines=False
     ws9.page_setup.paperSize=1; ws9.page_setup.orientation="landscape"
     ws9.page_setup.fitToPage=True; ws9.page_setup.fitToWidth=1; ws9.page_setup.fitToHeight=1
