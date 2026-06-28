@@ -74,6 +74,7 @@ def load_plays(df):
 def build_excel(plays, opp, week, date):
     FN="Arial"; CW="FFFFFFFF"; CL="FFF5F5F5"; CB="FF16213E"
     CBl="FF1A5276"; CTe="FF0E7060"; CPu="FF4A235A"; CR="FFC0392B"
+    CRB="FFFDE8E8"; CPB="FFE8F0FE"
     CDG="FF555555"; CGr="FF1E8449"
     # Zone colors — blue theme for offensive version
     ZONE_BG={"BZ":"FFFDE8E8","OF":"FFE8F0FE","MF":"FFE8F8E8",
