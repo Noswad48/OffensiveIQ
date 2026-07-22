@@ -451,7 +451,7 @@ def build_excel(plays, opp, week, date):
     FN="Arial"; CW="FFFFFFFF"; CL="FFF5F5F5"; CB="FF16213E"
     CBl="FF1A5276"; CTe="FF0E7060"; CPu="FF4A235A"; CR="FFC0392B"
     CRB="FFFDE8E8"; CPB="FFE8F0FE"
-    CDG="FF555555"; CGr="FF1E8449"
+    CDG="FF555555"; CGr="FF1E8449"; CYB="FFFFFBE6"
     # Zone colors — blue theme for offensive version
     ZONE_BG={"BZ":"FFFDE8E8","OF":"FFE8F0FE","MF":"FFE8F8E8",
               "FZ":"FFFFFBE6","RZ":"FFFCE4EC","GL":"FFEDE7F6"}
@@ -486,6 +486,10 @@ def build_excel(plays, opp, week, date):
     zone_names={"BZ":"Backed Up  Own 1–20","OF":"Open Field  Own 21–49",
                 "MF":"Midfield  50–Opp 40","FZ":"Fringe  Opp 39–21",
                 "RZ":"Red Zone  Opp 20–11","GL":"Goal Line  Opp 10 and in"}
+    zone_bgs={"BZ":"FFFDE8E8","OF":"FFE8F0FE","MF":"FFE8F8E8",
+              "FZ":"FFFFFBE6","RZ":"FFFCE4EC","GL":"FFEDE7F6"}
+    zone_hdrs={"BZ":"FFC0392B","OF":"FF1A5276","MF":"FF0E7060",
+               "FZ":"FF7D6608","RZ":"FFC0392B","GL":"FF4A235A"}
     runs=[p for p in plays if p['rp']=='Run']
     passes=[p for p in plays if p['rp']=='Pass']
     total=len(plays)
@@ -536,59 +540,94 @@ def build_excel(plays, opp, week, date):
     ws_log.freeze_panes="A3"
 
     # ── Tab 2: Field Zone Tendencies ─────────────────────────
-    ws2=wb2.create_sheet("2. Field Zone Tendencies")
+    ws2=wb2.create_sheet("2. Zone x Situation")
     ws2.sheet_properties.tabColor="1A5276"; ws2.sheet_view.showGridLines=False
-    NC2=2+len(dd); widths(ws2,[18,14]+[18]*len(dd))
-    banner(ws2,1,"FIELD ZONE TENDENCIES — What they line up in by field position",NC2,bg=CB,sz=13,ht=32)
+    ws2.page_setup.orientation="landscape"
+    ws2.page_setup.fitToPage=True; ws2.page_setup.fitToWidth=1; ws2.page_setup.fitToHeight=0
+    NC2=8
+    widths(ws2,[20,8,22,22,10,10,24,12])
+    banner(ws2,1,"ZONE x SITUATION  —  What they line up in by field position & down/distance",NC2,bg=CB,sz=12,ht=30)
     ws2.merge_cells(f"A2:{gcl(NC2)}2")
-    leg=ws2.cell(row=2,column=1,value="  Gray=plays  Red%=Run tendency  Blue%=Pass tendency  Yellow=OC note")
-    leg.font=Font(name=FN,size=8,italic=True,color=CDG)
-    leg.fill=fil("FFF0F0F0"); leg.alignment=Alignment(horizontal="left",vertical="center")
+    leg=ws2.cell(row=2,column=1,
+        value="  Situations with no snaps are skipped. Cells marked * have 1-2 snaps — too thin to call a tendency.")
+    leg.font=Font(name=FN,size=8,italic=True,color=CDG); leg.fill=fil("FFF0F0F0")
+    leg.alignment=Alignment(horizontal="left",vertical="center")
     ws2.row_dimensions[2].height=14
-    ws2.row_dimensions[3].height=36
-    sc(ws2,3,1,"FIELD ZONE",bold=True,sz=9,fc=CW,bg=CB)
-    sc(ws2,3,2,"METRIC",    bold=True,sz=9,fc=CW,bg=CB)
-    for ci,(lbl,_) in enumerate(dd): hdr(ws2,3,ci+3,lbl,bg=CB,sz=9)
 
-    sub=[("Plays","count"),("Run %","runpct"),("Pass %","passpct"),
-         ("Runs","runcnt"),("Passes","passcnt"),("▶ OC Note","call")]
-    row=4
+    zs_sits=[("1st & 10",    lambda p: p['dn']==1 and p['dist']>=8),
+             ("1st & Short", lambda p: p['dn']==1 and p['dist']<8),
+             ("2nd & Long",  lambda p: p['dn']==2 and p['dist']>=7),
+             ("2nd & Med",   lambda p: p['dn']==2 and 4<=p['dist']<=6),
+             ("2nd & Short", lambda p: p['dn']==2 and p['dist']<=3),
+             ("3rd & Long",  lambda p: p['dn']==3 and p['dist']>=7),
+             ("3rd & Med",   lambda p: p['dn']==3 and 4<=p['dist']<=6),
+             ("3rd & Short", lambda p: p['dn']==3 and p['dist']<=3),
+             ("4th Down",    lambda p: p['dn']==4)]
+
+    def _zs_top(lst,key,n=2):
+        vals=[str(p.get(key,'')) for p in lst
+              if str(p.get(key,'')).strip() not in ('','nan','None','0')]
+        if not vals: return "—"
+        return ", ".join(f"{v} ({c})" for v,c in Counter(vals).most_common(n))
+    def _zs_sr(lst):
+        v=[p for p in lst if p.get('succ') is not None]
+        return round(sum(1 for p in v if p['succ'])/len(v)*100) if v else None
+
+    row=3
     for zcode in zone_list:
-        zbg=ZONE_BG[zcode]; zhdr=ZONE_HDR[zcode]
-        zplays=[p for p in plays if p['zone']==zcode]
-        ws2.row_dimensions[row].height=17
+        zp=[p for p in plays if p['zone']==zcode]
+        if not zp: continue
+        zk=[p for p in zp if p.get('blitzed') is not None]
+        zb=[p for p in zk if p['blitzed'] is True]
+        zbr=f"{round(len(zb)/len(zk)*100)}% blitz" if zk else "blitz n/a"
         ws2.merge_cells(start_row=row,start_column=1,end_row=row,end_column=NC2)
-        c=ws2.cell(row=row,column=1,value=f"  {zcode}  ·  {zone_names[zcode]}  ({len(zplays)} plays)")
-        c.font=Font(name=FN,bold=True,size=10,color=CW)
-        c.fill=fil(zhdr); c.alignment=Alignment(horizontal="left",vertical="center")
+        c=ws2.cell(row=row,column=1,
+            value=f"  {zcode}  ·  {zone_names[zcode]}   —   {len(zp)} snaps   ·   {zbr}")
+        c.font=Font(name=FN,bold=True,size=11,color=CW)
+        c.fill=fil(zone_hdrs[zcode]); c.alignment=Alignment(horizontal="left",vertical="center")
+        ws2.row_dimensions[row].height=20
         row+=1
-        for slbl,stype in sub:
-            ws2.row_dimensions[row].height=16
-            sc(ws2,row,1,"",bg=zbg)
-            sc(ws2,row,2,slbl,bold=(stype in("runpct","passpct")),sz=9,fc=CDG,bg=zbg,h="right")
-            for ci_i,(_,dfilt) in enumerate(dd):
-                cn=ci_i+3; c=ws2.cell(row=row,column=cn)
-                c.border=bdr(); c.alignment=Alignment(horizontal="center",vertical="center")
-                try: filtered=[p for p in zplays if dfilt(p)]
-                except: filtered=[]
-                n_run=len([p for p in filtered if p['rp']=='Run'])
-                n_pass=len([p for p in filtered if p['rp']=='Pass'])
-                tot=len(filtered)
-                if stype=="count":
-                    c.value=tot; c.fill=fil("FFE8E8E8"); c.font=Font(name=FN,sz=9,color="FF000000"); c.number_format="0"
-                elif stype=="runpct":
-                    c.value=round(n_run/tot,2) if tot>0 else ""; c.font=Font(name=FN,bold=True,sz=11,color="FF8B0000"); c.fill=fil(zbg); c.number_format="0%"
-                elif stype=="passpct":
-                    c.value=round(n_pass/tot,2) if tot>0 else ""; c.font=Font(name=FN,bold=True,sz=11,color="FF00008B"); c.fill=fil(zbg); c.number_format="0%"
-                elif stype=="runcnt":
-                    c.value=n_run; c.fill=fil("FFFDE8E8"); c.font=Font(name=FN,sz=9,color="FF8B0000"); c.number_format="0"
-                elif stype=="passcnt":
-                    c.value=n_pass; c.fill=fil("FFE8F0FE"); c.font=Font(name=FN,sz=9,color="FF00008B"); c.number_format="0"
-                elif stype=="call":
-                    c.fill=fil("FFFFFBE6"); c.font=Font(name=FN,sz=8,italic=True,color=CDG)
-                    c.alignment=Alignment(horizontal="left",vertical="center",wrap_text=True)
+        for cn,txt in [(1,"SITUATION"),(2,"Snaps"),(3,"Top Fronts"),(4,"Top Coverages"),
+                       (5,"Blitz%"),(6,"Yds Allowed"),(7,"Named Pressures"),(8,"Succ% Allowed")]:
+            hdr(ws2,row,cn,txt,bg=CB,sz=8)
+        ws2.row_dimensions[row].height=16
+        row+=1
+        shown=0
+        for si,(lbl,fn) in enumerate(zs_sits):
+            try: sp=[p for p in zp if fn(p)]
+            except: sp=[]
+            if not sp: continue
+            shown+=1
+            thin=" *" if len(sp)<3 else ""
+            bg=zone_bgs[zcode] if si%2==0 else CL
+            spk=[p for p in sp if p.get('blitzed') is not None]
+            sb=[p for p in spk if p['blitzed'] is True]
+            ws2.row_dimensions[row].height=24
+            sc(ws2,row,1,lbl+thin,bold=True,sz=9,fc=CW,bg=CTe,h="left")
+            sc(ws2,row,2,len(sp),bold=True,sz=10,fc="FF000000",bg=bg,fmt="0")
+            sc(ws2,row,3,_zs_top(sp,'front'),sz=8,fc="FF8B0000",bg=CRB,h="left",wrap=True)
+            sc(ws2,row,4,_zs_top(sp,'cov'),sz=8,fc="FF00008B",bg=CPB,h="left",wrap=True)
+            if spk:
+                sc(ws2,row,5,float(len(sb))/float(len(spk)),bold=True,sz=10,fc="FFC0392B",bg=CYB,fmt="0%")
+            else:
+                sc(ws2,row,5,"—",sz=9,fc=CDG,bg=bg)
+            sc(ws2,row,6,round(sum(p['gnls'] for p in sp)/len(sp),1),sz=9,fc="FF0E7060",bg="FFE8F8E8",fmt="0.0")
+            named=[p for p in sp if p.get('blitz') and not p['blitz'].endswith('Rusher')
+                   and not p['blitz'].endswith('Rushers') and p['blitz']!='No Blitz']
+            sc(ws2,row,7,_zs_top(named,'blitz'),sz=8,fc="FF4A235A",bg="FFEDE7F6",h="left",wrap=True)
+            sr=_zs_sr(sp)
+            sc(ws2,row,8,(float(sr)/100.0 if sr is not None else "—"),sz=9,fc="FF0E7060",bg="FFE8F8E8",
+               fmt="0%" if sr is not None else "General")
             row+=1
-    ws2.freeze_panes="C4"
+        if shown==0:
+            ws2.merge_cells(start_row=row,start_column=1,end_row=row,end_column=NC2)
+            c=ws2.cell(row=row,column=1,value="   No snaps recorded in this zone.")
+            c.font=Font(name=FN,sz=9,italic=True,color=CDG); row+=1
+        row+=1
+
+    ws2.cell(row=row,column=1,
+        value="* = 1-2 snaps only — too thin to read as a tendency.").font=Font(name=FN,sz=8,italic=True,color=CDG)
+    ws2.freeze_panes="A3"
 
     # ── Tab 3: Defensive Fronts ──────────────────────────────
     ws3=wb2.create_sheet("3. Defensive Fronts")
