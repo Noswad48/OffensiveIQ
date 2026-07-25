@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import pandas as pd
 import io
 from collections import Counter
@@ -71,6 +72,26 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# ── Access Gate ───────────────────────────────────────────────
+def _check_password():
+    def _password_entered():
+        correct = os.environ.get("APP_PASSWORD", "")
+        if correct and st.session_state.get("_pw_input", "") == correct:
+            st.session_state["_pw_ok"] = True
+            st.session_state["_pw_input"] = ""
+        else:
+            st.session_state["_pw_ok"] = False
+    if st.session_state.get("_pw_ok"):
+        return True
+    st.markdown("### \U0001F512 OffensiveIQ Access")
+    st.text_input("Enter access password", type="password", key="_pw_input", on_change=_password_entered)
+    if st.session_state.get("_pw_ok") is False:
+        st.error("Incorrect password.")
+    return False
+
+if not _check_password():
+    st.stop()
 
 st.markdown("""
 <style>
