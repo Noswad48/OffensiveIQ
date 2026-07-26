@@ -1,10 +1,1 @@
-{
-  "dmitchell": {
-    "salt": "7f6a51daea55f541d7cb7420b806a7cf",
-    "hash": "8fea51a1c44b0585eceeb44efd6f2caf2fedf34e2d3d18b98c5a2d1d4f8ac866"
-  },
-  "csstest": {
-    "salt": "6658ebaecbd2fe13d927a5e3a0aac96a",
-    "hash": "cbe34c6643504fc02f6ff69ba69580ccc283d612f46d560d86805138abdb0e2a"
-  }
-}
+{}
