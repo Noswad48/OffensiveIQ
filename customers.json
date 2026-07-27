@@ -3,5 +3,10 @@
     "salt": "4502591e5be723a9be82abdeacc6aaff",
     "hash": "023a4314333f26d3a77fd7dda8dec9b47b5e6caa153c23eb9a787ee89d7d2674",
     "email": "jmitchellpsg@gmail.com"
+  },
+  "dmitchell": {
+    "salt": "cb39086ca97320c3a35cae923f042e71",
+    "hash": "f4dbaef283d05c3828dfb2531a2b2d487f735dc9ed3193aadbb8b0221ee723ca",
+    "email": "dmitchellpsg@gmail.com"
   }
 }
