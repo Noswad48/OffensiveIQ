@@ -97,28 +97,70 @@ def _gh_headers():
     return {"Authorization": f"token {_GH_TOKEN}", "Accept": "application/vnd.github+json"}
 
 def _load_customers():
-    try:
-        r = requests.get(_GH_API, headers=_gh_headers(), timeout=10)
-        if r.status_code == 200:
-            data = r.json()
-            content = base64.b64decode(data["content"]).decode("utf-8")
-            return json.loads(content), data["sha"]
+    """Load all customer records from Supabase. Returns (customers_dict, None)."""
+    if not (_SUPABASE_URL and _SUPABASE_SERVICE_KEY):
         return {}, None
+    try:
+        r = requests.get(
+            f"{_SUPABASE_URL}/rest/v1/offensiveiq_customers",
+            headers={
+                "apikey": _SUPABASE_SERVICE_KEY,
+                "Authorization": f"Bearer {_SUPABASE_SERVICE_KEY}",
+            },
+            timeout=10,
+        )
+        if r.status_code != 200:
+            return {}, None
+        rows = r.json()
+        customers = {}
+        for row in rows:
+            username = row.get("username")
+            if not username:
+                continue
+            customers[username] = {
+                "salt": row.get("salt"),
+                "hash": row.get("hash"),
+                "email": row.get("email"),
+                "reset_hash": row.get("reset_hash"),
+                "reset_salt": row.get("reset_salt"),
+                "reset_expires": row.get("reset_expires"),
+            }
+        return customers, None
     except Exception:
         return {}, None
 
+
 def _save_customers(customers, sha):
-    payload = {
-        "message": "Update customer credentials",
-        "content": base64.b64encode(json.dumps(customers, indent=2).encode("utf-8")).decode("utf-8"),
-    }
-    if sha:
-        payload["sha"] = sha
+    """Upsert all customer records into Supabase. sha is unused; kept for call-site compatibility."""
+    if not (_SUPABASE_URL and _SUPABASE_SERVICE_KEY):
+        return False
     try:
-        r = requests.put(_GH_API, headers=_gh_headers(), json=payload, timeout=10)
-        return r.status_code in (200, 201)
+        rows = []
+        for username, rec in customers.items():
+            rows.append({
+                "username": username,
+                "salt": rec.get("salt"),
+                "hash": rec.get("hash"),
+                "email": rec.get("email"),
+                "reset_hash": rec.get("reset_hash"),
+                "reset_salt": rec.get("reset_salt"),
+                "reset_expires": rec.get("reset_expires"),
+            })
+        r = requests.post(
+            f"{_SUPABASE_URL}/rest/v1/offensiveiq_customers?on_conflict=username",
+            headers={
+                "apikey": _SUPABASE_SERVICE_KEY,
+                "Authorization": f"Bearer {_SUPABASE_SERVICE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates",
+            },
+            json=rows,
+            timeout=10,
+        )
+        return r.status_code in (200, 201, 204)
     except Exception:
         return False
+
 
 def _hash_pw(password, salt_hex):
     salt = bytes.fromhex(salt_hex)
