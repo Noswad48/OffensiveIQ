@@ -252,7 +252,39 @@ def _send_email(to_addr, subject, body):
     except Exception:
         return False
 
+def _get_query_token():
+    try:
+        return st.query_params.get("token")
+    except Exception:
+        pass
+    try:
+        params = st.experimental_get_query_params()
+        vals = params.get("token")
+        return vals[0] if vals else None
+    except Exception:
+        return None
+def _try_sso_login():
+    if st.session_state.get("_sso_checked"):
+        return
+    st.session_state["_sso_checked"] = True
+    token = _get_query_token()
+    if not token:
+        return
+    try:
+        resp = requests.post(
+            "https://tscwyaphfadvvwdsrdbv.supabase.co/functions/v1/verify-launch-token",
+            json={"token": token},
+            timeout=10,
+        )
+        data = resp.json()
+    except Exception:
+        return
+    if data.get("valid") and "offensiveiq" in (data.get("products") or []):
+        st.session_state["_pw_ok"] = True
+        st.session_state["_user_email"] = (data.get("email") or "").strip().lower()
+        st.rerun()
 def _check_password():
+    _try_sso_login()
     if st.session_state.get("_pw_ok"):
         return True
 
