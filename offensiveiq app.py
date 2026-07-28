@@ -102,7 +102,7 @@ def _load_customers():
         return {}, None
     try:
         r = requests.get(
-            f"{_SUPABASE_URL}/rest/v1/offensiveiq_customers",
+            f"{_SUPABASE_URL}/rest/v1/accounts",
             headers={
                 "apikey": _SUPABASE_SERVICE_KEY,
                 "Authorization": f"Bearer {_SUPABASE_SERVICE_KEY}",
@@ -147,7 +147,7 @@ def _save_customers(customers, sha):
                 "reset_expires": rec.get("reset_expires"),
             })
         r = requests.post(
-            f"{_SUPABASE_URL}/rest/v1/offensiveiq_customers?on_conflict=username",
+            f"{_SUPABASE_URL}/rest/v1/accounts?on_conflict=username",
             headers={
                 "apikey": _SUPABASE_SERVICE_KEY,
                 "Authorization": f"Bearer {_SUPABASE_SERVICE_KEY}",
@@ -189,6 +189,51 @@ def _check_entitlement(email):
     except Exception:
         return False
 
+def _check_team_access(email):
+    """True if this email is an active team member under someone with an active Founders Plan."""
+    if not (_SUPABASE_URL and _SUPABASE_SERVICE_KEY and email):
+        return False
+    try:
+        url = (
+            f"{_SUPABASE_URL}/rest/v1/team_members"
+            f"?member_email=eq.{email.strip().lower()}"
+            f"&status=eq.active"
+            f"&select=owner_email"
+        )
+        r = requests.get(
+            url,
+            headers={"apikey": _SUPABASE_SERVICE_KEY, "Authorization": f"Bearer {_SUPABASE_SERVICE_KEY}"},
+            timeout=10,
+        )
+        if r.status_code != 200:
+            return False
+        rows = r.json()
+        if not rows:
+            return False
+        owner_email = rows[0].get("owner_email", "")
+        if not owner_email:
+            return False
+        url2 = (
+            f"{_SUPABASE_URL}/rest/v1/entitlements"
+            f"?email=eq.{owner_email.strip().lower()}"
+            f"&status=eq.active"
+            f"&plan_name=eq.Founders Plan"
+            f"&select=id"
+        )
+        r2 = requests.get(
+            url2,
+            headers={"apikey": _SUPABASE_SERVICE_KEY, "Authorization": f"Bearer {_SUPABASE_SERVICE_KEY}"},
+            timeout=10,
+        )
+        return r2.status_code == 200 and len(r2.json()) > 0
+    except Exception:
+        return False
+
+
+def _has_access(email):
+    """True if this email has its own active entitlement OR is an active team member under a Founders Plan owner."""
+    return _check_entitlement(email) or _check_team_access(email)
+
 def _send_email(to_addr, subject, body):
     if not (_SMTP_HOST and _SMTP_USER and _SMTP_PASSWORD):
         return False
@@ -224,7 +269,7 @@ def _check_password():
                 key = username.strip().lower()
                 record = customers.get(key)
                 if record and _hash_pw(password, record["salt"]) == record["hash"]:
-                    if _check_entitlement(record.get("email", "")):
+                    if _has_access(record.get("email", "")):
                         st.session_state["_pw_ok"] = True
                         st.rerun()
                     else:
@@ -248,12 +293,14 @@ def _check_password():
                     st.error("Password must be at least 6 characters.")
                 elif new_password != confirm_password:
                     st.error("Passwords do not match.")
-                elif not _check_entitlement(email):
-                    st.error("We couldn't find an active subscription for that email.")
+                elif not _has_access(email):
+                    st.error("We couldn't find an active subscription for that email, and it's not listed as a team member on someone else's plan.")
                 else:
                     customers, sha = _load_customers()
                     if key in customers:
                         st.error("That username is already taken.")
+                    elif any((rec.get("email") or "").strip().lower() == email for rec in customers.values()):
+                        st.error("An account already exists for that email. Please log in instead, or use Forgot Password.")
                     else:
                         salt_hex = os.urandom(16).hex()
                         customers[key] = {"salt": salt_hex, "hash": _hash_pw(new_password, salt_hex), "email": email}
