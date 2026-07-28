@@ -217,7 +217,7 @@ def _check_team_access(email):
             f"{_SUPABASE_URL}/rest/v1/entitlements"
             f"?email=eq.{owner_email.strip().lower()}"
             f"&status=eq.active"
-            f"&plan_name=eq.Founders Plan"
+            f"&plan_name=in.(Founders Plan,Standard Plan)"
             f"&select=id"
         )
         r2 = requests.get(
