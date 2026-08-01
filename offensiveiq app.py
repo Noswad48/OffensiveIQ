@@ -301,6 +301,7 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;500;600&family=Share+Tech+Mono&display=swap');
 html,body,[class*="css"]{font-family:'Barlow',sans-serif;background-color:#0a1628;color:#f0ede8;}
 .stApp{background-color:#0a1628;}
+[data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] * { color: #f0ede8 !important; }
 .main-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:64px;line-height:.95;text-transform:uppercase;color:#f0ede8;margin-bottom:8px;}
 .stButton>button{background:#1a5276!important;color:#f0ede8!important;border:none!important;font-family:'Barlow Condensed',sans-serif!important;font-weight:700!important;font-size:16px!important;letter-spacing:.1em!important;text-transform:uppercase!important;padding:12px 32px!important;border-radius:0!important;width:100%!important;}
 .stButton>button:hover{background:#154360!important;}
