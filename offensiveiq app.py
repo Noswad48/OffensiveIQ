@@ -1204,13 +1204,13 @@ def build_excel(plays, opp, week, date):
         except: sp=[]
         n_run=len([p for p in sp if p['rp']=='Run'])
         n_pass=len([p for p in sp if p['rp']=='Pass'])
-        total=len(sp)
+        sit_total=len(sp)
         blitz_plays=[p for p in sp if p.get('blitz','') not in('','nan','None','0','No')]
 
         sc(ws_dd,r,1,lbl,bold=True,sz=10,fc=CW,bg=color,h="left")
-        sc(ws_dd,r,2,total,bold=True,sz=11,fc="FF000000",bg=bg,fmt="0")
-        sc(ws_dd,r,3,round(n_run/total,2) if total>0 else "",bold=True,sz=12,fc="FF8B0000",bg=CRB,fmt="0%")
-        sc(ws_dd,r,4,round(n_pass/total,2) if total>0 else "",bold=True,sz=12,fc="FF00008B",bg=CPB,fmt="0%")
+        sc(ws_dd,r,2,sit_total,bold=True,sz=11,fc="FF000000",bg=bg,fmt="0")
+        sc(ws_dd,r,3,round(n_run/sit_total,2) if sit_total>0 else "",bold=True,sz=12,fc="FF8B0000",bg=CRB,fmt="0%")
+        sc(ws_dd,r,4,round(n_pass/sit_total,2) if sit_total>0 else "",bold=True,sz=12,fc="FF00008B",bg=CPB,fmt="0%")
 
         # Top fronts
         t3f=top3_dd(sp,'front')
