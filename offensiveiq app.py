@@ -85,7 +85,7 @@ _GH_API = f"https://api.github.com/repos/{_GH_REPO}/contents/customers.json"
 
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 _SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
-_ALLOWED_PLANS = ["Offensive IQ", "Founders Plan", "Standard Plan"]
+_ALLOWED_PLANS = ["Offensive IQ", "Founders Plan", "Standard Plan", "Team Plan"]
 
 _SMTP_HOST = os.environ.get("SMTP_HOST", "")
 _SMTP_PORT = int(os.environ.get("SMTP_PORT", "587") or "587")
