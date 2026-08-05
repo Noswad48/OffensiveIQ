@@ -42,7 +42,13 @@ COLUMN_ALIASES = {
 }
 
 def _normalize(s):
-    return "".join(ch for ch in str(s).upper().strip() if ch.isalnum() or ch == " ").strip()
+    s = "".join(ch for ch in str(s).upper().strip() if ch.isalnum() or ch == " ").strip()
+    # Some scouting exports (e.g. the offensive-scout sheet) prefix every
+    # column header with "OS " (e.g. "OS COVERAGE", "OS FRONT"). Strip that
+    # prefix so those columns still match our standard aliases.
+    if s.startswith("OS "):
+    s = s[3:].strip()
+    return s
 
 def map_columns(df):
     """Rename incoming columns to standard names. Returns (df, matched, missing)."""
