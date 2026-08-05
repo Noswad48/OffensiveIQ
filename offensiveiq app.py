@@ -493,7 +493,7 @@ def build_pptx(plays, opp, week, date, primary_hex="#1A5276", accent_hex="#C9A22
     # SLIDE 1 — Title
     s=_p_slide(prs,PRIMARY)
     _p_text(s,Inches(0.8),Inches(2.4),Inches(11.7),Inches(1.2),
-            "DEFENSIVE SCOUTING REPORT",42,ON_PRIMARY,bold=True,align=PP_ALIGN.CENTER,font="Cambria")
+            "OPPONENT SCOUTING REPORT",42,ON_PRIMARY,bold=True,align=PP_ALIGN.CENTER,font="Cambria")
     _p_text(s,Inches(0.8),Inches(3.6),Inches(11.7),Inches(0.9),
             opp.upper(),32,ACCENT_ON_PRIMARY,bold=True,align=PP_ALIGN.CENTER,font="Cambria")
     sub="  ·  ".join([x for x in [f"Week {week}" if week else "", date or "", f"{total} plays analyzed"] if x])
