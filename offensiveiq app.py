@@ -47,7 +47,7 @@ def _normalize(s):
     # column header with "OS " (e.g. "OS COVERAGE", "OS FRONT"). Strip that
     # prefix so those columns still match our standard aliases.
     if s.startswith("OS "):
-    s = s[3:].strip()
+        s = s[3:].strip()
     return s
 
 def map_columns(df):
