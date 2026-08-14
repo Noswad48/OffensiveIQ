@@ -386,8 +386,14 @@ def _blitz_read(raw):
 def load_plays(df):
     plays=[]
     for _,row in df.iterrows():
-        pt=str(row.get('PLAY TYPE','')).strip()
-        if pt not in ('Run','Pass'): continue
+        pt_raw=str(row.get('PLAY TYPE','')).strip()
+        pt_norm=pt_raw.upper()
+        if pt_norm in ('RUN','R','RUSH'):
+            pt='Run'
+        elif pt_norm in ('PASS','P'):
+            pt='Pass'
+        else:
+            continue
         zone=get_zone(row.get('YARD LN',''))
         if not zone: continue
         dn_v   = int(_num(row.get('DN',0)))
