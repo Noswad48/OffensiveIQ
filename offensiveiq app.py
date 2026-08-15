@@ -1631,6 +1631,8 @@ if uploaded and st.button("⚡ RUN ANALYSIS"):
                 st.write("**Matched:** " + (", ".join(matched.keys()) if matched else "none"))
                 if missing:
                     st.info("Not found (those sections will be blank): " + ", ".join(missing))
+                if 'PLAY TYPE' in matched:
+                    st.caption(f"DEBUG: PLAY TYPE from raw column '{matched['PLAY TYPE']}'. Sample values: {df['PLAY TYPE'].dropna().astype(str).unique()[:15].tolist()}")
 
             # Hard stop with a CLEAR message if a truly required column is absent
             req_missing = check_required(matched)
