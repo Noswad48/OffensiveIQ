@@ -1650,6 +1650,9 @@ if uploaded and st.button("⚡ RUN ANALYSIS"):
             if 'PLAY TYPE' in df.columns:
                 st.write("has_data(PLAY TYPE) new logic:", df['PLAY TYPE'].astype(str).str.strip().str.lower().replace({'nan': '', 'none': '', 'nat': '', '<na>': ''}).ne('').any())                
                 st.write("PLAY TYPE raw repr sample:", [repr(v) for v in df['PLAY TYPE'].head(5).tolist()])                
+                st.write("PLAY TYPE dtype:", str(df['PLAY TYPE'].dtype))
+                st.write("PLAY TYPE isna sum:", int(df['PLAY TYPE'].isna().sum()))
+                st.write("PLAY TYPE cleaned value counts:", df['PLAY TYPE'].astype(str).str.strip().str.lower().replace({'nan': '', 'none': '', 'nat': '', '<na>': ''}).value_counts(dropna=False).to_dict())
                     
             with st.expander("📋 Column mapping — what we found in your file"):
                 st.write("**Matched:** " + (", ".join(matched.keys()) if matched else "none"))
