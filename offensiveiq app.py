@@ -1645,6 +1645,8 @@ if uploaded and st.button("⚡ RUN ANALYSIS"):
                     st.write("Run/Pass value counts:", df['Run/Pass'].astype(str).value_counts(dropna=False).to_dict())
                 else:
                     st.write("Run/Pass column NOT present after mapping")                    
+            st.write("COLUMN_ALIASES['PLAY TYPE']:", COLUMN_ALIASES.get('PLAY TYPE'))
+            st.write("has_data(Run/Pass) inline:", df['Run/Pass'].astype(str).str.strip().replace('nan', '').ne('').any())            
                     
             with st.expander("📋 Column mapping — what we found in your file"):
                 st.write("**Matched:** " + (", ".join(matched.keys()) if matched else "none"))
