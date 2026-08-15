@@ -1625,6 +1625,10 @@ if uploaded and st.button("⚡ RUN ANALYSIS"):
             else:
                 df=pd.read_excel(uploaded)
 
+            with st.expander("🔧 DEBUG: raw columns as pandas read them"):
+                st.write("Columns:", df.columns.tolist())
+                st.write(df.head(10))
+
             # Flexible header mapping — handles differently-named columns
             df, matched, missing = map_columns(df)
             with st.expander("📋 Column mapping — what we found in your file"):
