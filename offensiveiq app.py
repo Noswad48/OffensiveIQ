@@ -384,7 +384,7 @@ def _blitz_read(raw):
     Named values (e.g. 'CORNER BOUNDARY') are treated as blitzes with that name."""
     s = str(raw).strip()
     if s in ('', 'nan', 'None'):
-        return None, ''          # untagged — unknown, not counted either way
+            return False, 'No Blitz'  # untagged means confirmed no blitz
     try:
         n = float(s)
         if n <= 0: return False, 'No Blitz'
@@ -1700,8 +1700,8 @@ if uploaded and st.button("⚡ RUN ANALYSIS"):
                     if not any(p['cov'] for p in plays): st.markdown("*Tag COVERAGE in Hudl*")
                 with z3:
                     st.markdown("**Top Blitz Types**")
-                    for x in top3(all_blitz,'blitz'): st.markdown(f"- {x['v']} ({x['n']})")
-                    if not all_blitz: st.markdown("*Tag BLITZ in Hudl*")
+                    for x in top3(blitz_yes,'blitz'): st.markdown(f"- {x['v']} ({x['n']})")
+                    if not blitz_yes: st.markdown("*Tag BLITZ in Hudl*")
 
         except Exception as e:
             import traceback
