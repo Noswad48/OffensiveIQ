@@ -1647,6 +1647,9 @@ if uploaded and st.button("⚡ RUN ANALYSIS"):
                     st.write("Run/Pass column NOT present after mapping")                    
             st.write("COLUMN_ALIASES['PLAY TYPE']:", COLUMN_ALIASES.get('PLAY TYPE'))
             st.write("has_data(Run/Pass) inline:", df['Run/Pass'].astype(str).str.strip().replace('nan', '').ne('').any())            
+            if 'PLAY TYPE' in df.columns:
+                st.write("has_data(PLAY TYPE) new logic:", df['PLAY TYPE'].astype(str).str.strip().str.lower().replace({'nan': '', 'none': '', 'nat': '', '<na>': ''}).ne('').any())                
+                st.write("PLAY TYPE raw repr sample:", [repr(v) for v in df['PLAY TYPE'].head(5).tolist()])                
                     
             with st.expander("📋 Column mapping — what we found in your file"):
                 st.write("**Matched:** " + (", ".join(matched.keys()) if matched else "none"))
