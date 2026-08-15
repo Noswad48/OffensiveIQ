@@ -62,7 +62,7 @@ def map_columns(df):
                 original = norm_incoming[na]
                 if fallback is None:
                     fallback = original
-                has_data = df[original].astype(str).str.strip().str.lower().replace({'nan': '', 'none': '', 'nat': '', '<na>': ''}).ne('').any()
+                has_data = df[original].fillna('').astype(str).str.strip().str.lower().replace({'nan': '', 'none': '', 'nat': '', '<na>': ''}).ne('').any()
                 if has_data:
                     rename[original] = standard
                     matched[standard] = original
