@@ -1,4 +1,4 @@
-import streamlit as st
+🔧import streamlit as st
 import os
 import json
 import requests
@@ -1631,6 +1631,14 @@ if uploaded and st.button("⚡ RUN ANALYSIS"):
 
             # Flexible header mapping — handles differently-named columns
             df, matched, missing = map_columns(df)
+            with st.expander("🔧 DEBUG: after column mapping"):
+                st.write("Matched dict:", matched)
+                st.write("Columns after mapping:", df.columns.tolist())
+                if 'PLAY TYPE' in df.columns:
+                    st.write("PLAY TYPE value counts:", df['PLAY TYPE'].astype(str).value_counts(dropna=False).to_dict())
+                else:
+                    st.write("PLAY TYPE column NOT present after mapping")
+                    
             with st.expander("📋 Column mapping — what we found in your file"):
                 st.write("**Matched:** " + (", ".join(matched.keys()) if matched else "none"))
                 if missing:
