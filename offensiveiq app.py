@@ -55,13 +55,22 @@ def map_columns(df):
     norm_incoming = {_normalize(c): c for c in df.columns}
     rename, matched = {}, {}
     for standard, aliases in COLUMN_ALIASES.items():
+        fallback = None
         for alias in aliases:
             na = _normalize(alias)
             if na in norm_incoming:
                 original = norm_incoming[na]
-                rename[original] = standard
-                matched[standard] = original
-                break
+                if fallback is None:
+                    fallback = original
+                has_data = df[original].astype(str).str.strip().replace('nan', '').ne('').any()
+                if has_data:
+                    rename[original] = standard
+                    matched[standard] = original
+                    break
+        else:
+            if fallback is not None:
+                rename[fallback] = standard
+                matched[standard] = fallback
     df = df.rename(columns=rename)
     # If two different original columns both map to the same standard name,
     # the rename can create duplicates. Downstream code assumes one column
