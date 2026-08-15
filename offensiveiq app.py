@@ -1638,6 +1638,13 @@ if uploaded and st.button("⚡ RUN ANALYSIS"):
                     st.write("PLAY TYPE value counts:", df['PLAY TYPE'].astype(str).value_counts(dropna=False).to_dict())
                 else:
                     st.write("PLAY TYPE column NOT present after mapping")
+            with st.expander("🔧 DEBUG: Run/Pass raw check"):
+                st.write("_normalize('Run/Pass'):", _normalize("Run/Pass"))
+                st.write("Cols matching RUNPASS:", [c for c in df.columns if _normalize(c) == "RUNPASS"])
+                if 'Run/Pass' in df.columns:
+                    st.write("Run/Pass value counts:", df['Run/Pass'].astype(str).value_counts(dropna=False).to_dict())
+                else:
+                    st.write("Run/Pass column NOT present after mapping")                    
                     
             with st.expander("📋 Column mapping — what we found in your file"):
                 st.write("**Matched:** " + (", ".join(matched.keys()) if matched else "none"))
