@@ -71,6 +71,13 @@ def map_columns(df):
             if fallback is not None:
                 rename[fallback] = standard
                 matched[standard] = fallback
+    # Drop any pre-existing column literally named after a standard field (e.g. an
+    # empty "DEF FRONT" column) when a different alias column was chosen instead,
+    # so it can't collide with the renamed column below and win the duplicate-
+    # column tiebreak (which keeps the first matching column and drops the rest).
+    for standard, source in matched.items():
+        if standard in df.columns and standard != source:
+            df = df.drop(columns=[standard])
     df = df.rename(columns=rename)
     # If two different original columns both map to the same standard name,
     # the rename can create duplicates. Downstream code assumes one column
